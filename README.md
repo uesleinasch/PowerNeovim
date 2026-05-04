@@ -5,8 +5,12 @@ CLI para replicar e compartilhar um ambiente de desenvolvimento
 `myastro`/`mykitty` e ferramentas CLI**) em qualquer máquina **Ubuntu /
 Debian / Pop!_OS**.
 
-> **Não toca em git e npm.** Assume que o usuário já tem `~/.gitconfig`,
+> **Não toca em git.** Assume que o usuário já tem `~/.gitconfig`,
 > `~/.npmrc` e suas credenciais configuradas.
+>
+> **Node.js é opcional**: o módulo `node` instala o gerenciador de versões
+> de sua escolha (`nvm` ou `n`) e o Node LTS. Se você já tem um deles,
+> o módulo só garante o Node LTS e os PATHs no `~/.zshrc`.
 
 ## Princípios
 
@@ -27,7 +31,7 @@ Debian / Pop!_OS**.
 ├── lib/
 │   ├── core.sh               # log, link_safe, backup, sudo wrapper, dry-run
 │   ├── ui.sh                 # TUI whiptail + fallback texto
-│   └── modules/              # 9 módulos independentes
+│   └── modules/              # 10 módulos independentes
 │       ├── apt.sh            # base: curl, ripgrep, fzf, jq, …
 │       ├── fonts.sh          # MesloLGS NF (Powerlevel10k)
 │       ├── zsh.sh            # zsh + OMZ + p10k + plugins
@@ -35,6 +39,7 @@ Debian / Pop!_OS**.
 │       ├── astronvim.sh      # link de ~/.config/nvim
 │       ├── kitty.sh          # Kitty + link da kitty.conf
 │       ├── tools.sh          # eza, starship, lazygit, lazydocker, uv
+│       ├── node.sh           # nvm OU n (escolha) + Node LTS
 │       ├── helpers.sh        # link de myastro / mykitty
 │       └── extras.sh         # btop, ranger, picom, flameshot, …
 ├── home/                     # estado canônico das configs
@@ -59,6 +64,13 @@ Debian / Pop!_OS**.
 # Subset
 ~/PowerNeovim/bin/powerneovim install --module zsh,fonts,helpers
 
+# Só Node (escolha interativa entre nvm e n)
+~/PowerNeovim/bin/powerneovim install --module node
+
+# Node não-interativo, forçando o gerenciador
+POWERNEOVIM_NODE_MANAGER=nvm ~/PowerNeovim/bin/powerneovim install --module node --yes
+POWERNEOVIM_NODE_MANAGER=n   ~/PowerNeovim/bin/powerneovim install --module node --yes
+
 # Simular sem executar nada
 ~/PowerNeovim/bin/powerneovim install --profile dev --dry-run --yes
 
@@ -74,7 +86,7 @@ powerneovim share dotfiles-$(date +%Y%m%d).tar.gz
 | Profile   | Inclui                                                                 |
 |-----------|------------------------------------------------------------------------|
 | `minimal` | apt + fonts + zsh + helpers                                            |
-| `dev`     | minimal + nvim + astronvim + kitty + tools                             |
+| `dev`     | minimal + nvim + astronvim + kitty + tools + node                      |
 | `full`    | tudo (= dev + extras)                                                  |
 
 ## Comandos
@@ -90,6 +102,31 @@ powerneovim share dotfiles-$(date +%Y%m%d).tar.gz
 | `update`           | Atualiza P10k e plugins zsh (e dá hint para `:Lazy sync`)       |
 | `help [tópico]`    | Ajuda                                                           |
 
+## Módulo `node` (nvm ou n)
+
+Instala um gerenciador de versões e o Node LTS, sem mexer em `~/.npmrc`.
+
+**Quem é escolhido?** A precedência (de cima pra baixo):
+
+1. Se já existe `~/.nvm` ou `~/n` (ou `n` no PATH) → reusa o que está lá.
+2. `POWERNEOVIM_NODE_MANAGER=nvm|n` (env) → respeita a escolha.
+3. Modo não-interativo (`--yes` / sem TTY) → default `nvm`.
+4. Modo interativo → menu `whiptail` (ou prompt) perguntando.
+
+**O que o instalador faz:**
+
+| Manager | Onde instala     | Como o Node entra no PATH                              |
+|---------|------------------|--------------------------------------------------------|
+| `nvm`   | `~/.nvm` (v0.40.1) | `~/.zshrc` faz `source $NVM_DIR/nvm.sh` se existir    |
+| `n`     | `~/n` (via `n-install -n`) | `~/.zshrc` prependa `~/n/bin` ao `PATH` se existir |
+
+Ambos os casos: depois do install, é instalado o **Node LTS** (`nvm install --lts`
+ou `n lts`) e o `~/.zshrc` do PowerNeovim já tem o auto-detect — basta
+**reabrir o terminal** ou rodar `exec zsh`.
+
+> **Idempotente.** Reexecutar `powerneovim install --module node` é seguro:
+> se o gerenciador já existe, ele só garante o Node LTS e os PATHs.
+
 ## Personalização (`~/.zshrc.local`)
 
 Copie o template e edite à vontade. O `~/.zshrc` gerenciado pelo PowerNeovim
@@ -102,7 +139,7 @@ $EDITOR ~/.zshrc.local
 
 Use `~/.zshrc.local` para:
 - aliases pessoais (VPN, Docker, etc.)
-- toolchains específicas (JAVA_HOME, ghcup, gcloud SDK, n)
+- toolchains específicas (JAVA_HOME, ghcup, gcloud SDK)
 - segredos (tokens, chaves)
 
 Esse arquivo nunca é tocado pelo PowerNeovim.
@@ -145,11 +182,13 @@ ou — mais tarde — git push) e rode `powerneovim link`.
 
 ## O que NÃO faz (por design)
 
-- Não instala / configura `git`, `npm`, `node` (assumimos que você cuida).
+- Não instala / configura `git` (assumimos que você cuida).
 - Não toca em `~/.gitconfig`, `~/.gitignore_global`, `~/.npmrc`.
 - Não muda configurações do GNOME / desktop.
 - Não roda `:Lazy sync` automático no Neovim — o Lazy.nvim pega na
   primeira execução.
+- Não escolhe entre `nvm` e `n` por você quando está no modo interativo —
+  o módulo `node` pergunta.
 
 ## Troubleshooting
 
@@ -160,4 +199,6 @@ ou — mais tarde — git push) e rode `powerneovim link`.
 | Plugins do Neovim não apareceram              | Abra `nvim` e aguarde o Lazy.nvim. Se travar: `:Lazy sync`.                    |
 | `powerneovim doctor` reclama de symlink          | Rode `powerneovim link` para refazer.                                             |
 | Quero voltar à config anterior                | `powerneovim unlink` — restaura os `.pnbak.<timestamp>` mais recentes.            |
+| `node`/`npm` não aparecem após install        | Reabra o terminal ou rode `exec zsh` — o `~/.zshrc` carrega `nvm`/`n` no startup. |
+| Quero forçar `nvm` (ou `n`) num install `--yes` | `POWERNEOVIM_NODE_MANAGER=nvm powerneovim install --module node --yes`.         |
 | Erro `unknown style 'zdiff3'` no `git`        | Git < 2.35; use `merge.conflictstyle=diff3` ou atualize via `ppa:git-core/ppa`. |

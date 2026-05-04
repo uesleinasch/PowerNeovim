@@ -70,6 +70,18 @@ fi
 [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
 [[ -f /usr/share/doc/fzf/examples/completion.zsh ]] && source /usr/share/doc/fzf/examples/completion.zsh
 
+# ---- Node version managers (auto-detect) ----
+# nvm: instalado pelo módulo 'node' do PowerNeovim em ~/.nvm
+export NVM_DIR="$HOME/.nvm"
+[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
+
+# n (Tim Caswell): instalado pelo módulo 'node' do PowerNeovim em ~/n
+if [[ -d "$HOME/n" ]]; then
+  export N_PREFIX="$HOME/n"
+  export PATH="$N_PREFIX/bin:$PATH"
+fi
+
 # Powerlevel10k (config gerada por p10k configure)
 [[ -f "$HOME/.p10k.zsh" ]] && source "$HOME/.p10k.zsh"
 
