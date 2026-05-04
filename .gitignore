@@ -1,0 +1,22 @@
+# Backups gerados pelo próprio PowerNeovim ao linkar arquivos reais
+*.pnbak.*
+
+# Tarballs gerados por `powerneovim share`
+*.tar.gz
+*.tgz
+
+# Personalização local (não compartilhada)
+home.local/
+
+# Estado runtime do Neovim (caso alguém rode nvim dentro do repo)
+.lazy/
+.local/
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

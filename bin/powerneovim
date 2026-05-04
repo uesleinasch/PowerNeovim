@@ -1,0 +1,292 @@
+#!/usr/bin/env bash
+# powerneovim — replicador de ambiente (Neovim/AstroNvim/Zsh/Kitty/helpers) para Ubuntu/Debian/Pop!_OS.
+set -euo pipefail
+
+POWERNEOVIM_ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export POWERNEOVIM_HOME="$POWERNEOVIM_ROOT"
+
+# shellcheck source=/dev/null
+source "$POWERNEOVIM_ROOT/lib/core.sh"
+# shellcheck source=/dev/null
+source "$POWERNEOVIM_ROOT/lib/ui.sh"
+
+for m in "$POWERNEOVIM_ROOT"/lib/modules/*.sh; do
+  # shellcheck source=/dev/null
+  source "$m"
+done
+
+# Único trap EXIT do programa: limpa keepalive de sudo + arquivo de notas.
+trap pn_cleanup EXIT
+
+# Lista canônica e ordenada
+_PN_ALL_MODULES=(apt fonts zsh nvim astronvim kitty tools helpers extras)
+
+_vf_profile_modules() {
+  case "$1" in
+    minimal) echo "apt fonts zsh helpers" ;;
+    dev)     echo "apt fonts zsh nvim astronvim kitty tools helpers" ;;
+    full)    echo "${_PN_ALL_MODULES[*]}" ;;
+    *) return 1 ;;
+  esac
+}
+
+_vf_module_pairs() {
+  local out=()
+  for m in "${_PN_ALL_MODULES[@]}"; do
+    out+=("$m:$("mod_${m}_meta")")
+  done
+  printf '%s\n' "${out[@]}"
+}
+
+# Itera os links de TODOS os módulos que expõem mod_X_links
+_vf_iter_all_links() {
+  for m in "${_PN_ALL_MODULES[@]}"; do
+    if declare -F "mod_${m}_links" >/dev/null; then
+      "mod_${m}_links"
+    fi
+  done
+}
+
+cmd_install() {
+  local profile="" modules_csv="" yes=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --profile) profile="${2:?--profile requer um valor}"; shift 2 ;;
+      --module|--modules) modules_csv="${2:?--module requer lista CSV}"; shift 2 ;;
+      --all) profile="full"; shift ;;
+      --yes|-y) yes=1; POWERNEOVIM_NONINTERACTIVE=1; shift ;;
+      --dry-run) DRY_RUN=1; shift ;;
+      -h|--help) cmd_help install; return 0 ;;
+      *) die "Flag desconhecida: $1 (rode 'powerneovim help install')" ;;
+    esac
+  done
+
+  [[ -n "$profile" && -n "$modules_csv" ]] \
+    && die "--profile e --module são mutuamente exclusivos."
+
+  require_not_root
+  require_supported_distro
+
+  local modules=()
+  if [[ -n "$profile" ]]; then
+    # shellcheck disable=SC2207
+    modules=( $(_vf_profile_modules "$profile" || die "Profile inválido: $profile (use minimal|dev|full)") )
+  elif [[ -n "$modules_csv" ]]; then
+    IFS=',' read -ra modules <<< "$modules_csv"
+  else
+    local pairs=()
+    while IFS= read -r line; do pairs+=("$line"); done < <(_vf_module_pairs)
+    # shellcheck disable=SC2207
+    modules=( $(ui_select_modules "${pairs[@]}") )
+    [[ ${#modules[@]} -gt 0 ]] || die "Nenhum módulo selecionado."
+  fi
+
+  for m in "${modules[@]}"; do
+    declare -F "mod_${m}_install" >/dev/null || die "Módulo desconhecido: $m"
+  done
+
+  log_info "Profile: ${profile:-custom}"
+  log_info "Módulos: ${modules[*]}"
+  [[ "$DRY_RUN" == "1" ]] && log_warn "DRY-RUN ativo — nenhuma mudança real será feita."
+
+  if [[ "$yes" -eq 0 ]]; then
+    ui_confirm "Continuar com a instalação?" || { log_info "Cancelado."; exit 0; }
+  fi
+
+  # Para --yes não-interativo: garante sudo upfront e mantém o timestamp vivo
+  # enquanto o install roda (módulos podem demorar minutos cada).
+  if [[ "$yes" -eq 1 ]]; then
+    setup_sudo_keepalive
+  fi
+
+  local failed=()
+  for m in "${modules[@]}"; do
+    log_section "[$m] $("mod_${m}_meta")"
+    # subshell isola erros e permite "rerun é seguro"
+    if ( "mod_${m}_install" ); then
+      :
+    else
+      log_error "Módulo $m falhou (rc=$?)."
+      failed+=("$m")
+    fi
+  done
+
+  print_post_install_notes
+
+  if [[ ${#failed[@]} -gt 0 ]]; then
+    log_warn "Módulos com falha: ${failed[*]}"
+    log_info "Cada módulo é idempotente — basta reexecutar 'powerneovim install'."
+    exit 1
+  fi
+
+  log_success "Instalação concluída."
+  log_info "Próximos passos:"
+  log_info "  1) abra um novo terminal (zsh) ou rode: exec zsh"
+  log_info "  2) rode 'nvim' uma vez para o Lazy.nvim instalar os plugins"
+  log_info "  3) verifique tudo com: powerneovim doctor"
+}
+
+cmd_link() {
+  local dry=0
+  for a in "$@"; do [[ "$a" == "--dry-run" ]] && dry=1; done
+  [[ "$dry" == "1" ]] && DRY_RUN=1
+  log_section "Refazendo symlinks (sem reinstalar nada)"
+  ensure_local_bin
+  while IFS=$'\t' read -r src dst; do
+    [[ -z "$src" ]] && continue
+    [[ -e "$src" ]] || { log_warn "Source ausente, pulando: $src"; continue; }
+    link_safe "$src" "$dst"
+  done < <(_vf_iter_all_links)
+  log_success "Symlinks atualizados."
+}
+
+cmd_unlink() {
+  local dry=0
+  for a in "$@"; do [[ "$a" == "--dry-run" ]] && dry=1; done
+  [[ "$dry" == "1" ]] && DRY_RUN=1
+  log_section "Removendo symlinks do PowerNeovim (e restaurando backups quando houver)"
+  while IFS=$'\t' read -r _src dst; do
+    [[ -z "$dst" ]] && continue
+    unlink_safe "$dst"
+  done < <(_vf_iter_all_links)
+  log_success "Unlink concluído."
+}
+
+cmd_status() {
+  log_section "Status do PowerNeovim"
+  printf "  Repo: %s\n" "$POWERNEOVIM_HOME"
+  printf "  Versão: %s\n" "$(cat "$POWERNEOVIM_HOME/VERSION" 2>/dev/null || echo '?')"
+  printf "  Distro: %s\n" "$(. /etc/os-release 2>/dev/null && echo "${PRETTY_NAME:-?}")"
+  printf "  Shell: %s\n" "${SHELL:-?}"
+  echo ""
+  echo "  Symlinks gerenciados:"
+  while IFS=$'\t' read -r _src dst; do
+    [[ -z "$dst" ]] && continue
+    if [[ -L "$dst" ]]; then
+      printf "    %s✓%s %s → %s\n" "$C_GREEN" "$C_R" "$dst" "$(readlink "$dst")"
+    elif [[ -e "$dst" ]]; then
+      printf "    %s•%s %s (existe, NÃO é symlink)\n" "$C_YELLOW" "$C_R" "$dst"
+    else
+      printf "    %s✗%s %s (ausente)\n" "$C_RED" "$C_R" "$dst"
+    fi
+  done < <(_vf_iter_all_links)
+}
+
+cmd_doctor() {
+  log_section "Diagnóstico"
+  is_supported_distro && status_line 1 "Distro suportada" || status_line 0 "Distro não suportada"
+  for m in "${_PN_ALL_MODULES[@]}"; do
+    "mod_${m}_doctor"
+  done
+}
+
+cmd_share() {
+  local out="${1:-powerneovim-share-$(date +%Y%m%d).tar.gz}"
+  log_section "Empacotando PowerNeovim para compartilhamento"
+  log_info "Saída: $out"
+  if [[ "$DRY_RUN" == "1" ]]; then
+    log_dry "tar -czf $out (excluindo home.local, .pnbak.*, .git)"
+    return 0
+  fi
+  # Importante: --exclude usa wildcards relativos ao caminho dentro do tar.
+  # *.pnbak.* casa em qualquer profundidade; o nome do diretório raiz não.
+  tar -czf "$out" \
+    -C "$(dirname "$POWERNEOVIM_HOME")" \
+    --exclude='*.pnbak.*' \
+    --exclude='home.local' \
+    --exclude='.git' \
+    "$(basename "$POWERNEOVIM_HOME")"
+  log_success "Pacote criado: $out"
+  log_info "Para o colega usar:"
+  log_info "  tar -xzf $(basename "$out") -C \$HOME && \$HOME/PowerNeovim/bin/powerneovim install"
+}
+
+cmd_update() {
+  log_section "Atualizando ferramentas (best-effort)"
+  local omz_custom="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+  for d in \
+    "$omz_custom/themes/powerlevel10k" \
+    "$omz_custom/plugins/zsh-autosuggestions" \
+    "$omz_custom/plugins/zsh-syntax-highlighting"; do
+    if [[ -d "$d/.git" ]]; then
+      log_info "Atualizando $(basename "$d")…"
+      run git -C "$d" pull --ff-only || log_warn "$(basename "$d"): pull falhou"
+    fi
+  done
+  if has_cmd nvim && [[ -d "$HOME/.config/nvim" ]]; then
+    log_info "Para atualizar plugins do Neovim: nvim '+Lazy sync' '+qa'"
+  fi
+  log_success "Update concluído."
+}
+
+cmd_help() {
+  local topic="${1:-}"
+  if [[ -z "$topic" || "$topic" == "main" ]]; then
+    cat <<EOF
+${C_PURPLE}${C_B}PowerNeovim${C_R} — replicador de ambiente Neovim/AstroNvim/Zsh/Kitty/helpers
+
+${C_B}Uso:${C_R}
+  powerneovim <comando> [opções]
+
+${C_B}Comandos:${C_R}
+  install   instala módulos selecionados (TUI por default)
+  link      refaz apenas os symlinks (sem reinstalar nada)
+  unlink    remove os symlinks gerenciados (restaura backups)
+  status    mostra o estado atual dos symlinks
+  doctor    diagnostica todos os módulos
+  share     empacota o repo num .tar.gz para compartilhar com colegas
+  update    atualiza p10k e plugins zsh
+  help      ajuda (use 'help <comando>' para detalhes)
+
+${C_B}Profiles:${C_R}
+  minimal   apt + fonts + zsh + helpers
+  dev       minimal + nvim + astronvim + kitty + tools
+  full      tudo (= minimal + dev + extras)
+
+${C_B}Exemplos:${C_R}
+  powerneovim install                            # menu interativo
+  powerneovim install --profile full --yes       # tudo, sem perguntas
+  powerneovim install --module zsh,fonts,helpers # só esses módulos
+  powerneovim install --profile dev --dry-run    # simula sem mudar nada
+  powerneovim share dotfiles-2026-05.tar.gz      # gera pacote compartilhável
+EOF
+    return 0
+  fi
+  case "$topic" in
+    install)
+      cat <<EOF
+${C_B}powerneovim install${C_R} [--profile P | --module a,b,c] [--yes] [--dry-run]
+
+  --profile <minimal|dev|full>   conjunto pré-definido de módulos
+  --module a,b,c                 lista CSV (mutuamente exclusivo com --profile)
+  --all                          equivale a --profile full
+  --yes / -y                     não pedir confirmação (pede sudo upfront)
+  --dry-run                      simula (logs em cinza, nada é executado)
+
+Módulos disponíveis: ${_PN_ALL_MODULES[*]}
+EOF
+      ;;
+    link|unlink|status|doctor|share|update)
+      printf "powerneovim %s — %s\n" "$topic" "Use 'powerneovim $topic --dry-run' (quando aplicável) para simular."
+      ;;
+    *) die "Tópico de ajuda desconhecido: $topic" ;;
+  esac
+}
+
+main() {
+  local cmd="${1:-help}"; shift || true
+  case "$cmd" in
+    install) cmd_install "$@" ;;
+    link)    cmd_link    "$@" ;;
+    unlink)  cmd_unlink  "$@" ;;
+    status)  cmd_status  "$@" ;;
+    doctor)  cmd_doctor  "$@" ;;
+    share)   cmd_share   "$@" ;;
+    update)  cmd_update  "$@" ;;
+    help|-h|--help) cmd_help "${1:-}" ;;
+    version|--version|-V) cat "$POWERNEOVIM_ROOT/VERSION" ;;
+    *) die "Comando desconhecido: $cmd. Rode 'powerneovim help'." ;;
+  esac
+}
+
+main "$@"
