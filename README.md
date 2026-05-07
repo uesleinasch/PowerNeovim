@@ -41,7 +41,8 @@ Debian / Pop!_OS**.
 │       ├── tools.sh          # eza, starship, lazygit, lazydocker, uv
 │       ├── node.sh           # nvm OU n (escolha) + Node LTS
 │       ├── helpers.sh        # link de myastro / mykitty
-│       └── extras.sh         # btop, ranger, picom, flameshot, …
+│       ├── extras.sh         # btop, ranger, picom, flameshot, …
+│       └── notiont.sh        # notion-t (CLI Notion via pipx)
 ├── home/                     # estado canônico das configs
 │   ├── .zshrc                # template comum (sourceia .zshrc.local)
 │   ├── .p10k.zsh

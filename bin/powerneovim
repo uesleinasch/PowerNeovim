@@ -19,7 +19,7 @@ done
 trap pn_cleanup EXIT
 
 # Lista canônica e ordenada
-_PN_ALL_MODULES=(apt fonts zsh nvim astronvim kitty tools node helpers extras)
+_PN_ALL_MODULES=(apt fonts zsh nvim astronvim kitty tools node helpers extras notiont)
 
 _vf_profile_modules() {
   case "$1" in
@@ -215,6 +215,10 @@ cmd_update() {
   done
   if has_cmd nvim && [[ -d "$HOME/.config/nvim" ]]; then
     log_info "Para atualizar plugins do Neovim: nvim '+Lazy sync' '+qa'"
+  fi
+  if has_cmd pipx && pipx list --short 2>/dev/null | grep -q '^notion-t '; then
+    log_info "Atualizando notion-t (pipx)…"
+    run pipx upgrade notion-t || log_warn "pipx upgrade notion-t falhou"
   fi
   log_success "Update concluído."
 }
