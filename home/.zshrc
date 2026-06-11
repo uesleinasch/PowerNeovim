@@ -196,3 +196,6 @@ export _JAVA_OPTIONS="-Dsun.java2d.opengl=false"
 export PATH="/home/unascimento@jacto.local/SecondMachine/bin:$PATH"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Kitty: comandos de sessão (ksave/kload)
+[ -f ~/.config/kitty/session.zsh ] && source ~/.config/kitty/session.zsh

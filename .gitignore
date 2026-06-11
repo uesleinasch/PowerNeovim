@@ -12,6 +12,10 @@ home.local/
 .lazy/
 .local/
 
+# Kitty: estado runtime da sessão e cache do save-session.py (não versionar)
+home/.config/kitty/last-session.kitty
+home/.config/kitty/__pycache__/
+
 # Editores
 .vscode/
 .idea/
