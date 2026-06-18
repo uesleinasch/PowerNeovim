@@ -42,8 +42,11 @@ return {
         number = true, -- sets vim.opt.number
         spell = false, -- sets vim.opt.spell
         signcolumn = "yes", -- sets vim.opt.signcolumn to yes
-        wrap = false, -- sets vim.opt.wrap
+        wrap = true, -- ativa quebra de linha visual
+        linebreak = true, -- quebra apenas em limites de palavra
         clipboard = "unnamedplus", -- yank/paste use the system clipboard
+        textwidth = 80, -- quebra automática de linha aos 80 caracteres
+        colorcolumn = "80", -- régua visual na coluna 80
       },
       g = { -- vim.g.<key>
         -- configure global vim variables (vim.g)

@@ -197,5 +197,18 @@ export PATH="/home/unascimento@jacto.local/SecondMachine/bin:$PATH"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
+# brainiac: ensure ~/.local/bin on PATH
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
+# bun completions
+[ -s "/home/unascimento@jacto.local/.bun/_bun" ] && source "/home/unascimento@jacto.local/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
 # Kitty: comandos de sessão (ksave/kload)
 [ -f ~/.config/kitty/session.zsh ] && source ~/.config/kitty/session.zsh

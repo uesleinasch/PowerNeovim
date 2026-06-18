@@ -45,7 +45,7 @@ section_tabs() {
   key "Ctrl+Shift+→ / ←"     "próxima / anterior"
   key "Ctrl+Shift+. / ,"     "move a aba para frente / trás"
   key "Ctrl+Shift+Alt+T"     "renomear (alternativo)"
-  key "Ctrl+Shift+L"         "alterna layout (splits/stack/tall)"
+  key "Ctrl+Shift+L"         "remapeado: navega split à direita (ver Splits)"
 }
 
 section_splits() {
@@ -71,8 +71,8 @@ section_splits() {
   key "Ctrl+Alt+H / L"       "mais estreito / mais largo"
   key "Ctrl+Alt+K / J"       "mais alto / mais baixo"
   sub "Outros"
-  key "Ctrl+Shift+F7"        "muda layout (splits/stack/tall)"
-  key "Ctrl+Shift+Z"         "zoom toggle (maximiza split atual)"
+  key "Ctrl+Shift+F7"        "foca uma janela visível (escolha por tecla)"
+  key "Ctrl+Shift+Z"         "zoom toggle (maximiza split atual) — custom; antes era scroll_to_prompt -1 (agora Ctrl+Shift+D)"
 }
 
 section_scrollback() {
@@ -80,7 +80,11 @@ section_scrollback() {
   key "Ctrl+Shift+↑ / ↓"     "rola linha por linha"
   key "Ctrl+Shift+PgUp/PgDn" "rola página por página"
   key "Ctrl+Shift+Home/End"  "topo / fim do scrollback"
-  key "Ctrl+Shift+H"         "abre o scrollback no pager (less)"
+  key "Ctrl+Shift+H"         "NÃO é scrollback: foi remapeado p/ navegar split (ver Splits)"
+  sub "Saltos de prompt (shell integration)"
+  key "Ctrl+Shift+D"         "vai ao prompt anterior (custom)"
+  key "Ctrl+Shift+X"         "vai ao próximo prompt"
+  key "Ctrl+Shift+G"         "mostra a saída do último comando"
   note "Limite atual: 20.000 linhas (scrollback_lines no kitty.conf)"
 }
 
@@ -95,9 +99,10 @@ section_copy() {
   title "Clipboard (copiar/colar)"
   key "Ctrl+Shift+C"         "copia seleção"
   key "Ctrl+Shift+V"         "cola"
-  key "Ctrl+Shift+S"         "cola da seleção primária (X11)"
+  key "Shift+Insert"         "cola da seleção primária (X11)"
   note "copy_on_select=clipboard ativo: selecionar com mouse já copia"
   note "strip_trailing_spaces=smart: tira espaços ao final automaticamente"
+  note "Ctrl+Shift+S agora SALVA a sessão (kitty.conf), não cola seleção"
 }
 
 section_font() {
