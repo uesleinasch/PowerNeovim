@@ -2,9 +2,9 @@
 # myastro — guia rápido de atalhos e recursos do AstroNvim (com config local)
 # Uso: myastro [seção]
 # Seções: leader, modes, motion, select, edit, textobj, registers, replace,
-#         marks, macros, buffers, windows, files, search, lsp, diag, git,
-#         term, harpoon, flash, surround, comments, session, ui, which,
-#         packs, misc, prontos
+#         marks, macros, buffers, windows, files, search, lsp, refactor, diag,
+#         git, term, harpoon, flash, surround, comments, session, ui, which,
+#         multicursor, http, db, packs, misc, prontos
 
 set -euo pipefail
 
@@ -211,6 +211,12 @@ section_registers() {
   key "<Leader>f'"            "picker de registers (snacks)"
   key "<Ctrl-r>{r}  (insert)" "insere register em modo Insert"
   key "<Ctrl-r>{r}  (cmdline)" "insere register no command-line"
+  sub "Yanky — histórico de yank/paste"
+  key "p / P"                 "cola (yanky mantém um ring de histórico)"
+  key "]y / [y"               "logo após colar: cicla próx / ant no histórico"
+  key "gp / gP"               "cola depois / antes da seleção"
+  key "]p / [p"               "cola ajustando a indentação (linewise)"
+  key "<Leader>fy"            "abre o histórico de yanks (picker)"
   note "Default já manda yank/delete para o clipboard (unnamedplus)"
 }
 
@@ -232,10 +238,15 @@ section_replace() {
   key "R"                     "sobrescreve enquanto digita"
   key "r{c}"                  "troca 1 char por {c}"
   key "gr{motion}"            "replace sem alterar tamanho da linha"
-  sub "Projeto inteiro"
-  note "<Leader>fg (live grep) → <Ctrl-q> manda p/ quickfix"
-  note "→ :cdo s/foo/bar/g | update   aplica em todos os matches"
-  note "Plugin opcional: nvim-spectre (UI dedicada para search&replace)"
+  sub "Projeto inteiro (grug-far)"
+  key "<Leader>ss"            "search & replace no workspace (UI dedicada)"
+  key "<Leader>sw"            "replace da palavra sob o cursor"
+  key "<Leader>sf"            "search & replace só no arquivo atual"
+  key "<Leader>se"            "search & replace só no filetype atual"
+  key "<Leader>s (visual)"    "usa a seleção como termo de busca"
+  key ":GrugFar"              "abre o painel manualmente"
+  note "No neo-tree: gS sobre um nó faz replace naquele diretório"
+  note "Nativo: <Leader>fg (live grep) → <Ctrl-q> → :cdo s/x/y/g | update"
 }
 
 section_prontos() {
@@ -427,7 +438,8 @@ section_lsp() {
   key "K"                     "hover (docs)"
   key "<Ctrl-k>"              "signature help (em insert)"
   sub "Refactor / fix"
-  key "<Leader>lr"            "rename do símbolo"
+  key "grn"                   "rename com preview (inc-rename)"
+  key "<Leader>lr"            "rename do símbolo (LSP padrão)"
   key "<Leader>la"            "code action"
   key "<Leader>lf"            "format buffer"
   key "<Leader>lF"            "toggle autoformat-on-save"
@@ -475,6 +487,11 @@ section_git() {
   key "<Leader>gc"            "branches (snacks/telescope)"
   key "<Leader>gC"            "commits"
   key "<Leader>gt"            "status"
+  sub "Diffview (diffs e histórico)"
+  key ":DiffviewOpen"          "diff da working tree / resolver merge conflict"
+  key ":DiffviewFileHistory %" "histórico do arquivo atual"
+  key ":DiffviewFileHistory"   "histórico do repositório"
+  key ":DiffviewClose"         "fecha o diffview"
   note "Para git de verdade: \$ lazygit no terminal — abre como floating"
 }
 
@@ -596,6 +613,15 @@ section_packs() {
   key "trouble-nvim"          "ver: myastro diag"
   key "todo-comments-nvim"    "ver: myastro comments"
   key "vscode-icons"          "ícones nos pickers/explorer"
+  sub "Adicionados (refactor / busca / git / tools)"
+  key "refactoring-nvim"      "ver: myastro refactor"
+  key "grug-far-nvim"         "ver: myastro replace"
+  key "diffview-nvim"         "ver: myastro git"
+  key "multicursors-nvim"     "ver: myastro multicursor"
+  key "yanky-nvim"            "ver: myastro registers"
+  key "kulala-nvim"           "ver: myastro http"
+  key "full-dadbod"           "ver: myastro db"
+  key "inc-rename (local)"    "rename preview — ver: myastro lsp"
   note "Editar: ~/.config/nvim/lua/community.lua e :Lazy sync"
 }
 
@@ -620,6 +646,61 @@ section_misc() {
   key "ZZ / ZQ"               "salva e sai / sai sem salvar (vanilla)"
 }
 
+section_refactor() {
+  title "Refactor (refactoring.nvim + inc-rename)"
+  note "A maioria funciona em modo VISUAL: selecione o trecho primeiro."
+  key "<Leader>re"            "extrair função (da seleção)"
+  key "<Leader>rf"            "extrair função para outro arquivo"
+  key "<Leader>rv"            "extrair variável"
+  key "<Leader>ri"            "inline da variável (normal ou visual)"
+  key "<Leader>rr"            "menu de refactors disponíveis (visual)"
+  sub "Debug prints"
+  key "<Leader>rp"            "insere print no ponto atual"
+  key "<Leader>rd"            "insere print da variável sob o cursor"
+  key "<Leader>rc"            "remove os prints de debug inseridos"
+  sub "Rename de símbolo"
+  key "grn"                   "rename com preview ao vivo (inc-rename)"
+  note "Extract no modo normal: <Leader>rb (bloco), <Leader>rbf (p/ arquivo)"
+}
+
+section_multicursor() {
+  title "Multi-cursor (multicursors.nvim)"
+  key "<Leader>m"             "inicia multi-cursor na palavra/seleção (modo n e v)"
+  note "Equivalente ao Ctrl-D do VSCode."
+  note "Ao iniciar abre um painel (hydra) no rodapé com todas as teclas:"
+  note "  n / N    adiciona cursor na próxima / anterior ocorrência"
+  note "  q        pula a ocorrência atual"
+  note "  i a c    insert antes / depois / change em todos os cursores"
+  note "  <Esc>    finaliza o modo multi-cursor"
+}
+
+section_http() {
+  title "HTTP / REST (kulala) — arquivos .http"
+  note "Crie um arquivo .http, escreva a requisição. Prefixo: <Leader>k"
+  key "<Leader>ks"            "envia a requisição sob o cursor"
+  key "<CR>"                  "envia a requisição (dentro do .http)"
+  key "<Leader>ka"            "envia todas as requisições do arquivo"
+  key "<Leader>kr"            "repete a última requisição"
+  key "<Leader>ki"            "inspeciona a requisição atual"
+  key "<Leader>kc"            "copia a requisição como cURL"
+  key "<Leader>kb"            "abre o scratchpad"
+  key "<Leader>kn  <Leader>kp" "pula p/ próxima / anterior requisição"
+  note "Prefixo movido de <Leader>r p/ <Leader>k (config: plugins/kulala.lua)"
+}
+
+section_db() {
+  title "Banco de dados (vim-dadbod / DBUI)"
+  key ":DBUI"                 "abre a árvore lateral de bancos"
+  key ":DBUIToggle"           "alterna o painel do DBUI"
+  key ":DBUIAddConnection"    "cadastra uma conexão (URL do banco)"
+  key ":DBUIFindBuffer"       "encontra o buffer SQL da conexão"
+  sub "Dentro do DBUI / buffer .sql"
+  key "<CR>"                  "expande nó da árvore / executa a query"
+  key "<Leader>W"             "salva a query atual como favorita"
+  note "Autocomplete de tabelas/colunas em .sql (vim-dadbod-completion + blink)"
+  note "Conexão por URL — ex.: sqlserver://user:senha@host:1433/banco"
+}
+
 show_all() {
   show_header
   section_leader
@@ -638,6 +719,7 @@ show_all() {
   section_files
   section_search
   section_lsp
+  section_refactor
   section_diag
   section_git
   section_term
@@ -648,9 +730,12 @@ show_all() {
   section_session
   section_ui
   section_which
+  section_multicursor
+  section_http
+  section_db
   section_packs
   section_misc
-  printf "\n${C5}  Filtre uma seção: ${B}myastro <leader|modes|motion|select|edit|textobj|registers|replace|prontos|marks|macros|buffers|windows|files|search|lsp|diag|git|term|harpoon|flash|surround|comments|session|ui|which|packs|misc>${R}\n\n"
+  printf "\n${C5}  Filtre uma seção: ${B}myastro <leader|modes|motion|select|edit|textobj|registers|replace|prontos|marks|macros|buffers|windows|files|search|lsp|refactor|diag|git|term|harpoon|flash|surround|comments|session|ui|which|multicursor|http|db|packs|misc>${R}\n\n"
 }
 
 case "${1:-all}" in
@@ -670,6 +755,7 @@ case "${1:-all}" in
   files|file|tree)    show_header; section_files ;;
   search|find)        show_header; section_search ;;
   lsp)                show_header; section_lsp ;;
+  refactor|refactoring|refac) show_header; section_refactor ;;
   diag|trouble)       show_header; section_diag ;;
   git)                show_header; section_git ;;
   term|terminal)      show_header; section_term ;;
@@ -680,6 +766,9 @@ case "${1:-all}" in
   session|sessions)   show_header; section_session ;;
   ui|toggle|toggles)  show_header; section_ui ;;
   which|whichkey)     show_header; section_which ;;
+  multicursor|multicursors|mc) show_header; section_multicursor ;;
+  http|rest|kulala|api) show_header; section_http ;;
+  db|database|sql|dadbod|dbui) show_header; section_db ;;
   packs|pack|plugins) show_header; section_packs ;;
   misc)               show_header; section_misc ;;
   -h|--help|help)
@@ -707,6 +796,7 @@ Seções:
   files       neo-tree e abrir arquivos
   search      buscas (arquivos, grep, símbolos, help)
   lsp         LSP (gd, K, rename, code action, format…)
+  refactor    refactoring.nvim (extract/inline/debug) + rename preview
   diag        diagnostics + Trouble
   git         gitsigns (hunks, stage, blame, diff)
   term        toggleterm (terminal interno)
@@ -717,6 +807,9 @@ Seções:
   session     resession (salvar/restaurar sessões)
   ui          toggles (wrap, spell, números, diagnósticos…)
   which       which-key (menu por prefixo)
+  multicursor multi-cursor estilo VSCode (multicursors.nvim)
+  http        cliente HTTP/REST (kulala) em arquivos .http
+  db          banco de dados (vim-dadbod / DBUI)
   packs       packs/comunidade ativos
   misc        :Lazy, :Mason, health, save/quit
 EOF
