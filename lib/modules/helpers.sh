@@ -1,11 +1,11 @@
 # shellcheck shell=bash
-# Module: helpers — symlink dos seus utilitários myastro/mykitty para ~/.local/bin.
+# Module: helpers — symlink dos seus utilitários myastro/mykitty/myyazi para ~/.local/bin.
 
 mod_helpers_meta() {
-  echo "Utilitários myastro e mykitty (helpers de ajuda do AstroNvim e Kitty)"
+  echo "Utilitários myastro, mykitty e myyazi (ajuda do AstroNvim, Kitty e Yazi)"
 }
 
-_PN_HELPERS=(myastro mykitty)
+_PN_HELPERS=(myastro mykitty myyazi)
 
 mod_helpers_install() {
   ensure_local_bin

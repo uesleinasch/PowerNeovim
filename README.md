@@ -2,7 +2,7 @@
 
 CLI para replicar e compartilhar um ambiente de desenvolvimento
 (**Neovim + AstroNvim, Zsh + Oh-My-Zsh + Powerlevel10k, Kitty, helpers
-`myastro`/`mykitty` e ferramentas CLI**) em qualquer máquina **Ubuntu /
+`myastro`/`mykitty`/`myyazi` e ferramentas CLI**) em qualquer máquina **Ubuntu /
 Debian / Pop!_OS**.
 
 > **Não toca em git.** Assume que o usuário já tem `~/.gitconfig`,
@@ -40,7 +40,7 @@ Debian / Pop!_OS**.
 │       ├── kitty.sh          # Kitty + link da kitty.conf
 │       ├── tools.sh          # eza, starship, lazygit, lazydocker, uv, yazi
 │       ├── node.sh           # nvm OU n (escolha) + Node LTS
-│       ├── helpers.sh        # link de myastro / mykitty
+│       ├── helpers.sh        # link de myastro / mykitty / myyazi
 │       ├── extras.sh         # btop, ranger, yazi, picom, flameshot, …
 │       └── notiont.sh        # notion-t (CLI Notion via pipx)
 ├── home/                     # estado canônico das configs
@@ -48,7 +48,7 @@ Debian / Pop!_OS**.
 │   ├── .p10k.zsh
 │   └── .config/{nvim,kitty,btop,ranger,yazi,…}
 ├── home.local.example/       # personalização não versionada
-├── bin-helpers/              # myastro, mykitty
+├── bin-helpers/              # myastro, mykitty, myyazi
 ├── docker/                   # Dockerfile para testar isolado
 └── VERSION
 ```
@@ -205,6 +205,14 @@ usando a build **musl** — estática, para não depender da glibc do sistema
 ```bash
 y            # abre o yazi; `q` sai já trocando o terminal p/ o diretório atual
 yazi         # idem, mas sem trocar o diretório do shell ao sair
+```
+
+Para o guia completo de comandos do yazi, rode **`myyazi`** (cheatsheet no
+estilo do `myastro`/`mykitty`, instalado pelo módulo `helpers`):
+
+```bash
+myyazi             # exibe tudo
+myyazi files       # filtra uma seção (nav, files, find, tabs, cli, …)
 ```
 
 ## Troubleshooting
