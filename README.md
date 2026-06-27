@@ -38,15 +38,15 @@ Debian / Pop!_OS**.
 │       ├── nvim.sh           # binário Neovim em /opt
 │       ├── astronvim.sh      # link de ~/.config/nvim
 │       ├── kitty.sh          # Kitty + link da kitty.conf
-│       ├── tools.sh          # eza, starship, lazygit, lazydocker, uv
+│       ├── tools.sh          # eza, starship, lazygit, lazydocker, uv, yazi
 │       ├── node.sh           # nvm OU n (escolha) + Node LTS
 │       ├── helpers.sh        # link de myastro / mykitty
-│       ├── extras.sh         # btop, ranger, picom, flameshot, …
+│       ├── extras.sh         # btop, ranger, yazi, picom, flameshot, …
 │       └── notiont.sh        # notion-t (CLI Notion via pipx)
 ├── home/                     # estado canônico das configs
 │   ├── .zshrc                # template comum (sourceia .zshrc.local)
 │   ├── .p10k.zsh
-│   └── .config/{nvim,kitty,btop,ranger,…}
+│   └── .config/{nvim,kitty,btop,ranger,yazi,…}
 ├── home.local.example/       # personalização não versionada
 ├── bin-helpers/              # myastro, mykitty
 ├── docker/                   # Dockerfile para testar isolado
@@ -190,6 +190,22 @@ ou — mais tarde — git push) e rode `powerneovim link`.
   primeira execução.
 - Não escolhe entre `nvm` e `n` por você quando está no modo interativo —
   o módulo `node` pergunta.
+
+## Yazi (file explorer no terminal)
+
+O módulo `tools` instala o **yazi** em `~/.local/bin` (binários `yazi` e `ya`),
+usando a build **musl** — estática, para não depender da glibc do sistema
+(releases `-gnu` recentes exigem glibc ≥ 2.39). A config fica em
+`home/.config/yazi/` (gerenciada como os demais dotfiles) e o `~/.zshrc` define:
+
+- `EDITOR=nvim` — arquivos abertos de dentro do yazi vão para o Neovim.
+- a função `y` — abre o yazi e, ao sair com `q`, deixa o terminal no diretório
+  navegado (atalho do [quick-start](https://yazi-rs.github.io/docs/quick-start)).
+
+```bash
+y            # abre o yazi; `q` sai já trocando o terminal p/ o diretório atual
+yazi         # idem, mas sem trocar o diretório do shell ao sair
+```
 
 ## Troubleshooting
 

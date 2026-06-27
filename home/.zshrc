@@ -212,3 +212,19 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 # Kitty: comandos de sessão (ksave/kload)
 [ -f ~/.config/kitty/session.zsh ] && source ~/.config/kitty/session.zsh
+
+# ── yazi: file explorer no terminal (gerenciado pelo PowerNeovim) ─────────────
+# Editor padrão — o yazi abre arquivos no $EDITOR; aqui apontamos para o Neovim.
+export EDITOR='nvim'
+export VISUAL='nvim'
+
+# `y`: abre o yazi e, ao sair com `q`, deixa o terminal no diretório onde o yazi
+# estava. Sem isso, você sairia sempre na pasta de origem.
+# https://yazi-rs.github.io/docs/quick-start
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	yazi "$@" --cwd-file="$tmp"
+	IFS= read -r -- cwd < "$tmp"
+	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
+	rm -f -- "$tmp"
+}

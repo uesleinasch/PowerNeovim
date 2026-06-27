@@ -201,6 +201,31 @@ install_github_binary() {
   rm -rf "$tmp"
 }
 
+# install_github_zip URL BIN_NAME [BIN_NAME…] — baixa um .zip do GitHub e instala
+# um ou mais binários (por nome) em ~/.local/bin. Útil para releases zipados cujo
+# binário vem dentro de uma subpasta (ex.: yazi → yazi + ya). Garante `unzip`.
+install_github_zip() {
+  local url="$1"; shift
+  if [[ "$DRY_RUN" == "1" ]]; then
+    log_dry "install_github_zip $url → ~/.local/bin/{$*}"
+    return 0
+  fi
+  has_cmd unzip || apt_install unzip
+  local tmp; tmp="$(mktemp -d)"
+  download_to "$url" "$tmp/pkg.zip"
+  unzip -qo "$tmp/pkg.zip" -d "$tmp"
+  local bin found
+  for bin in "$@"; do
+    found="$(find "$tmp" -maxdepth 3 -type f -name "$bin" -print -quit 2>/dev/null)"
+    if [[ -z "$found" ]]; then
+      rm -rf "$tmp"
+      die "install_github_zip: '$bin' não encontrado em $url"
+    fi
+    install -m 0755 "$found" "$HOME/.local/bin/$bin"
+  done
+  rm -rf "$tmp"
+}
+
 # clone_or_pull REPO DST [LABEL]
 clone_or_pull() {
   local repo="$1" dst="$2" name="${3:-$(basename "$dst")}"

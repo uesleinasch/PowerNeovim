@@ -1,14 +1,15 @@
 # shellcheck shell=bash
-# Module: tools — utilitários CLI extras (eza, starship, lazygit, lazydocker, uv).
+# Module: tools — utilitários CLI extras (eza, starship, lazygit, lazydocker, uv, yazi).
 
 mod_tools_meta() {
-  echo "CLIs extras: eza, starship, lazygit, lazydocker, uv"
+  echo "CLIs extras: eza, starship, lazygit, lazydocker, uv, yazi"
 }
 
 mod_tools_install() {
   ensure_local_bin
   _vf_install_starship
   _vf_install_eza
+  _vf_install_yazi
   _vf_install_lazygit
   _vf_install_lazydocker
   _vf_install_uv
@@ -27,6 +28,16 @@ _vf_install_eza() {
   install_github_binary \
     "https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz" \
     eza
+}
+
+_vf_install_yazi() {
+  if has_cmd yazi; then log_info "OK: yazi presente"; return 0; fi
+  log_info "Instalando yazi (file explorer no terminal)…"
+  # Build musl (estática): independe da glibc do sistema (ex.: glibc < 2.39).
+  # Traz dois binários: `yazi` (TUI) e `ya` (CLI/plugins).
+  install_github_zip \
+    "https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-musl.zip" \
+    yazi ya
 }
 
 _vf_install_lazygit() {
@@ -65,7 +76,7 @@ _vf_install_uv() {
 }
 
 mod_tools_doctor() {
-  for c in starship eza lazygit lazydocker uv; do
+  for c in starship eza yazi ya lazygit lazydocker uv; do
     if has_cmd "$c"; then
       status_line 1 "$c: $(command -v "$c")"
     else
